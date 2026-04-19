@@ -4,12 +4,14 @@ import numpy as np
 from axi import AxiLiteMaster, AxiWriteSlave, AxiReadSlave
 from block_metadata import BlockMetadata
 from cocotb.triggers import RisingEdge, Lock
+from panda_time_travel import PandaTimeTravel
 
 
 class PandaTestHarness(object):
     def __init__(self, dut, configd_path,
                  pcap_mem_size=0x5000,
-                 table_mem_size=0x5000):
+                 table_mem_size=0x5000,
+                 do_time_travel=False):
         self.log = logging.getLogger(__class__.__name__)
         self.dut = dut
         self.clock = dut.clk_i
@@ -26,6 +28,8 @@ class PandaTestHarness(object):
         self.pcap_axi.add_callback(self.handle_pcap_write)
         self.table_axi = AxiReadSlave(dut, 'm_table_axi', self.clock,
                                       self.table_read)
+        if do_time_travel:
+            self.time_travel = PandaTimeTravel(self.dut)
 
     async def wait_for_irq(self, timeout=1024):
         t = 0

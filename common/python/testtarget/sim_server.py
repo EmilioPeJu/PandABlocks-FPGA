@@ -23,6 +23,23 @@ OK_BYTES = b'\x00\x00\x00\x00'
 ERR_BYTES = b'\xFF\xFF\xFF\xFF'
 
 
+async def tick_counting(clock):
+    TS_REPORT_PERIOD = 1.0
+    ticks = 0
+    last_ts = time.time()
+    last_ticks = ticks
+    edge = RisingEdge(clock)
+    while True:
+        await edge
+        ticks += 1
+        current_ts = time.time()
+        if current_ts >= last_ts + TS_REPORT_PERIOD:
+            tps = (ticks - last_ticks)
+            print(f'Ticks per second = {tps:.1f}')
+            last_ts = current_ts
+            last_ticks = ticks
+
+
 @dataclass
 class TableBuffer:
     addr: int
@@ -77,7 +94,8 @@ class SimServer(object):
                            for i in range(self.table_n_buffers)])
         self.test = PandaTestHarness(dut, config_path,
                                      pcap_mem_size=self.pcap_mem_size,
-                                     table_mem_size=self.table_mem_size)
+                                     table_mem_size=self.table_mem_size,
+                                     do_time_travel=True)
         self.pcap_arm_offsets = self.test.metadata.get_indexes('*REG.PCAP_ARM')
         self.pcap_acquiring = False
         self.pcap_data = bytearray()
